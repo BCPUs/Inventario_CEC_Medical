@@ -1,0 +1,22 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="max-w-md mx-auto bg-white p-6 rounded-lg shadow-md border border-red-100 mt-12 text-center">
+    <div class="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4 border border-red-200">
+        <span class="text-red-700 font-black text-xl">!</span>
+    </div>
+    <h2 class="text-xl font-bold text-red-700 mb-3">¿Confirmar Eliminación de Herramienta?</h2>
+    <p class="text-sm text-gray-600 mb-6 leading-relaxed">
+        ¿Estás seguro de que deseas eliminar la herramienta <span class="font-bold text-gray-800">"{{ herramienta.nombre }}"</span> (Código: {{ herramienta.codigo }})? Esta acción borrará el registro físico permanentemente.
+    </p>
+    <form method="POST" class="flex justify-center space-x-3">
+        {% csrf_token %}
+        <input type="hidden" name="id" value="{{ herramienta.id }}">
+        <a href="{% url 'herramienta_list' %}" class="bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold py-2 px-4 rounded text-sm transition-colors">
+            Cancelar
+        </a>
+        <button type="submit" class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded text-sm transition-colors shadow-sm">
+            Sí, Eliminar
+        </button>
+    </form>
+</div>
+{% endblock %}

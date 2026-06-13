@@ -1,0 +1,20 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="max-w-md mx-auto my-8 p-6 bg-white border border-gray-200 rounded-lg text-center shadow-lg">
+    <h2 class="text-xl font-bold text-red-700 mb-4">¿Confirmar Eliminación?</h2>
+    <p class="text-gray-600 mb-6">Esta acción eliminará de forma permanente el equipo médico <strong>{{ equipo.nombre }}</strong> (Serie: {{ equipo.serie }}).</p>
+    
+    <form method="POST" action="{% url 'equipo_delete' %}">
+        {% csrf_token %}
+        <input type="hidden" name="id" value="{{ equipo.id }}">
+        <div class="flex justify-center space-x-4">
+            <button type="submit" class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-6 rounded transition shadow">
+                Eliminar definitivamente
+            </button>
+            <a href="{% url 'equipo_list' %}" class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-6 rounded transition">
+                Cancelar
+            </a>
+        </div>
+    </form>
+</div>
+{% endblock %}

@@ -1,0 +1,45 @@
+{% extends 'base.html' %}
+{% block content %}
+<h2 class="text-2xl font-bold text-gray-800 mb-6">{{ title }}</h2>
+
+<form method="POST" class="max-w-2xl bg-gray-50 p-6 rounded-lg border border-gray-200 space-y-4">
+    {% csrf_token %}
+    
+    {% if form.errors %}
+    <div class="p-4 mb-4 text-sm text-red-700 bg-red-100 rounded-lg" role="alert">
+        <span class="font-bold">Por favor corrige los siguientes errores:</span>
+        {{ form.errors }}
+    </div>
+    {% endif %}
+
+    {% for field in form %}
+    <div>
+        <label class="block text-sm font-semibold text-gray-700 mb-1">{{ field.label }}</label>
+        {{ field }}
+        {% if field.help_text %}
+            <p class="text-xs text-gray-400 mt-1">{{ field.help_text }}</p>
+        {% endif %}
+    </div>
+    {% endfor %}
+
+    <div class="flex space-x-3 pt-4">
+        <button type="submit" class="bg-blue-800 hover:bg-blue-900 text-white font-bold py-2 px-6 rounded shadow transition">
+            Guardar Usuario
+        </button>
+        <a href="{% url 'user_list' %}" class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-6 rounded transition">
+            Cancelar
+        </a>
+    </div>
+</form>
+
+<script>
+
+    document.querySelectorAll('input, select, textarea').forEach(el => {
+        if (el.type === 'checkbox') {
+            el.classList.add('rounded', 'border-gray-300', 'text-blue-600', 'focus:ring-blue-500', 'h-4', 'w-4');
+        } else {
+            el.classList.add('w-full', 'px-3', 'py-2', 'border', 'rounded-md', 'bg-white', 'focus:ring-2', 'focus:ring-blue-500', 'focus:outline-none');
+        }
+    });
+</script>
+{% endblock %}

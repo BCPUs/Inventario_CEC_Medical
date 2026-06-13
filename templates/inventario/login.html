@@ -3,6 +3,18 @@
 {% block content %}
 <div class="max-w-md mx-auto my-12 bg-white p-8 rounded-lg shadow-md border border-gray-200">
     <h2 class="text-2xl font-bold text-center text-blue-800 mb-6">Control de Acceso</h2>
+    
+    {% if form.non_field_errors %}
+    <div class="bg-red-50 border-l-4 border-red-500 p-4 mb-5 rounded shadow-sm flex items-start space-x-2 animate-fade-in">
+        <span class="text-red-500 mt-0.5"></span>
+        <div class="text-sm text-red-700 font-semibold">
+            {% for error in form.non_field_errors %}
+                <p>{{ error|default:"Usuario y/o contraseña incorrectos. Por favor, intente de nuevo." }}</p>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
     <form method="POST">
         {% csrf_token %}
         <div class="mb-4">
@@ -13,7 +25,7 @@
             <label class="block text-gray-700 text-sm font-bold mb-2">Contraseña:</label>
             <input type="password" name="password" class="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" required>
         </div>
-        <button type="submit" class="w-full bg-blue-800 hover:bg-blue-900 text-white font-bold py-2 px-4 rounded-md transition duration-200">
+        <button type="submit" class="w-full bg-blue-800 hover:bg-blue-900 text-white font-bold py-2 px-4 rounded-md transition duration-200 shadow-sm">
             Ingresar al Sistema
         </button>
     </form>

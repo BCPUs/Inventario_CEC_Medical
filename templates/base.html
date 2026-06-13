@@ -10,7 +10,7 @@
     
     <nav class="bg-blue-800 text-white shadow-md">
         <div class="max-w-7xl mx-auto px-4 py-3 flex justify-between items-center">
-            <a href="#" class="text-xl font-bold tracking-wide">CEC MEDICAL | Sistema de Inventario</a>
+            <a href="{% url 'home' %}" class="text-xl font-bold tracking-wide">CEC MEDICAL | Sistema de Inventario</a>
             <div class="flex items-center space-x-4">
                 {% if user.is_authenticated %}
                     <span class="text-sm bg-blue-700 px-3 py-1 rounded">Usuario: {{ user.username }}</span>
@@ -29,27 +29,27 @@
         </div>
     </nav>
     
-    <div class="flex flex-1 max-w-7xl w-full mx-auto mt-6 px-4 gap-6 mb-10">
+    <div class="flex flex-1 flex-col md:flex-row max-w-7xl w-full mx-auto mt-6 px-4 gap-6 mb-10">
         
         {% if user.is_authenticated %}
-        <aside class="w-64 bg-white rounded-lg shadow p-4 h-fit">
+        <aside class="w-full md:w-64 bg-white rounded-lg shadow p-4 h-fit">
             
-            <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">Módulos Base</h3>
+            <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">Taller Biomédico</h3>
             <ul class="space-y-2 mb-6">
+                <li>
+                    <a href="{% url 'orden_list' %}" class="block px-3 py-2 rounded-md hover:bg-gray-100 font-medium text-gray-700 hover:text-blue-800 transition-colors">
+                        Órdenes de Trabajo
+                    </a>
+                </li>
                 <li>
                     <a href="{% url 'equipo_list' %}" class="block px-3 py-2 rounded-md hover:bg-gray-100 font-medium text-gray-700 hover:text-blue-800 transition-colors">
                         Equipos Médicos
                     </a>
                 </li>
-                <li>
-                    <a href="{% url 'user_list' %}" class="block px-3 py-2 rounded-md hover:bg-gray-100 font-medium text-gray-700 hover:text-blue-800 transition-colors">
-                        Gestión de Usuarios
-                    </a>
-                </li>
             </ul>
 
-            <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3 pt-4 border-t border-gray-100">Inventario</h3>
-            <ul class="space-y-2">
+            <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3 pt-4 border-t border-gray-100">Logística e Inventario</h3>
+            <ul class="space-y-2 mb-6">
                 <li>
                     <a href="{% url 'repuesto_list' %}" class="block px-3 py-2 rounded-md hover:bg-gray-100 font-medium text-gray-700 hover:text-blue-800 transition-colors">
                         Bodega de Repuestos
@@ -61,17 +61,28 @@
                     </a>
                 </li>
                 <li>
-                    <a href="{% url 'registrar_movimiento' %}" class="block px-3 py-2 rounded-md hover:bg-gray-100 font-medium text-gray-700 hover:text-blue-800 transition-colors">
-                        Registrar Movimiento
+                    <a href="{% url 'marca_list' %}" class="block px-3 py-2 rounded-md hover:bg-gray-100 font-medium text-gray-700 hover:text-blue-800 transition-colors">
+                        Catálogo de Marcas
                     </a>
                 </li>
                 <li>
                     <a href="{% url 'movimiento_list' %}" class="block px-3 py-2 rounded-md hover:bg-gray-100 font-medium text-gray-700 hover:text-blue-800 transition-colors">
-                        Historial de Movimientos
+                        Kardex de Movimientos
                     </a>
                 </li>
             </ul>
-            
+
+            {% if user.is_staff %}
+            <h3 class="text-xs font-bold text-red-400 uppercase tracking-wider mb-3 pt-4 border-t border-gray-100">Seguridad</h3>
+            <ul class="space-y-2">
+                <li>
+                    <a href="{% url 'user_list' %}" class="block px-3 py-2 rounded-md bg-red-50/50 hover:bg-red-50 font-medium text-gray-700 hover:text-red-700 transition-colors">
+                        Gestión de Usuarios
+                    </a>
+                </li>
+            </ul>
+            {% endif %}
+
         </aside>
         {% endif %}
 

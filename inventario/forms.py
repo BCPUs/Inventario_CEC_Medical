@@ -1,69 +1,59 @@
 from django import forms
 from django.contrib.auth.models import User
-from .models import EquipoMedico, MovimientoInventario, Repuesto, Herramienta
+from .models import EquipoMedico, MovimientoInventario, Repuesto, Herramienta, Marca, OrdenTrabajo
 
-class UserForm(forms.ModelForm):
+class TailwindFormMixin:
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        for name, field in self.fields.items():
+            if isinstance(field.widget, forms.CheckboxInput):
+                field.widget.attrs.update({'class': 'rounded border-gray-300 text-blue-600 focus:ring-blue-500'})
+            else:
+                field.widget.attrs.update({'class': 'w-full border border-gray-300 rounded-md p-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all'})
+
+class UserForm(TailwindFormMixin, forms.ModelForm):
     password = forms.CharField(widget=forms.PasswordInput(), label="Contraseña", required=False)
-
     class Meta:
         model = User
         fields = ['username', 'first_name', 'last_name', 'email', 'is_staff']
-        labels = {
-            'username': 'Nombre de Usuario',
-            'is_staff': 'Es Administrador / Supervisor',
-        }
 
-    def clean_username(self):
-        username = self.cleaned_data.get('username')
-        if len(username) < 4:
-            raise forms.ValidationError("El nombre de usuario debe tener al menos 4 caracteres.")
-        return username
+class MarcaForm(TailwindFormMixin, forms.ModelForm):
+    class Meta:
+        model = Marca
+        fields = ['nombre', 'categoria'] 
 
-
-class EquipoMedicoForm(forms.ModelForm):
+class EquipoMedicoForm(TailwindFormMixin, forms.ModelForm):
     class Meta:
         model = EquipoMedico
         fields = ['codigo', 'nombre', 'marca', 'modelo', 'serie', 'estado', 'descripcion']
+        widgets = {'descripcion': forms.Textarea(attrs={'rows': 3})}
 
-    def clean_codigo(self):
-        codigo = self.cleaned_data.get('codigo')
-        if not codigo.isalnum():
-            raise forms.ValidationError("El código del equipo solo debe contener caracteres alfanuméricos.")
-        return codigo
-    
-class MovimientoForm(forms.ModelForm):
-    class Meta:
-        model = MovimientoInventario
-        
-        fields = ['repuesto', 'tipo', 'cantidad', 'equipo_destino', 'observaciones']
-        widgets = {
-            'observaciones': forms.Textarea(attrs={'class': 'w-full border rounded p-2', 'rows': 3}),
-            'repuesto': forms.Select(attrs={'class': 'w-full border rounded p-2'}),
-            'tipo': forms.Select(attrs={'class': 'w-full border rounded p-2'}),
-            'cantidad': forms.NumberInput(attrs={'class': 'w-full border rounded p-2'}),
-            'equipo_destino': forms.Select(attrs={'class': 'w-full border rounded p-2'}),
-        }
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['marca'].queryset = Marca.objects.filter(categoria='medico')
 
-class RepuestoForm(forms.ModelForm):
+class RepuestoForm(TailwindFormMixin, forms.ModelForm):
     class Meta:
         model = Repuesto
         fields = ['codigo', 'nombre', 'stock', 'stock_minimo', 'precio', 'ubicacion']
-        widgets = {
-            'codigo': forms.TextInput(attrs={'class': 'w-full border rounded p-2'}),
-            'nombre': forms.TextInput(attrs={'class': 'w-full border rounded p-2'}),
-            'stock': forms.NumberInput(attrs={'class': 'w-full border rounded p-2'}),
-            'stock_minimo': forms.NumberInput(attrs={'class': 'w-full border rounded p-2'}),
-            'precio': forms.NumberInput(attrs={'class': 'w-full border rounded p-2', 'step': '0.01'}),
-            'ubicacion': forms.TextInput(attrs={'class': 'w-full border rounded p-2'}),
-        }
-class HerramientaForm(forms.ModelForm):
+
+class HerramientaForm(TailwindFormMixin, forms.ModelForm):
     class Meta:
         model = Herramienta
         fields = ['codigo', 'nombre', 'marca', 'estado', 'ubicacion']
-        widgets = {
-            'codigo': forms.TextInput(attrs={'class': 'w-full border rounded p-2'}),
-            'nombre': forms.TextInput(attrs={'class': 'w-full border rounded p-2'}),
-            'marca': forms.TextInput(attrs={'class': 'w-full border rounded p-2'}),
-            'estado': forms.Select(attrs={'class': 'w-full border rounded p-2'}),
-            'ubicacion': forms.TextInput(attrs={'class': 'w-full border rounded p-2'}),
-        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['marca'].queryset = Marca.objects.filter(categoria='herramienta')
+
+class OrdenTrabajoForm(TailwindFormMixin, forms.ModelForm):
+    class Meta:
+        model = OrdenTrabajo
+        fields = ['secuencial', 'equipo', 'tecnico', 'diagnostico_falla']
+        widgets = {'diagnostico_falla': forms.Textarea(attrs={'rows': 4, 'placeholder': 'Describa el estado en el que se recibe el equipo y la avería detectada...'})}
+
+class MovimientoOrdenForm(TailwindFormMixin, forms.ModelForm):
+    class Meta:
+        model = MovimientoInventario
+        fields = ['repuesto', 'cantidad', 'observaciones']
+        widgets = {'observaciones': forms.Textarea(attrs={'rows': 2, 'placeholder': 'Ej. Sustitución por desgaste estructural.'})}

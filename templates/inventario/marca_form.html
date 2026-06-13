@@ -1,0 +1,37 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="max-w-md mx-auto bg-white p-8 rounded-lg shadow border border-gray-100 mt-10">
+    <h2 class="text-2xl font-bold text-blue-800 mb-6 border-b pb-3">
+        {{ title }}
+    </h2>
+    
+    <form method="POST" class="space-y-5">
+        {% csrf_token %}
+        <div>
+            <label class="block font-semibold text-sm text-gray-700 mb-1.5">Nombre de la Marca:</label>
+            {{ form.nombre }}
+            {% if form.nombre.errors %}
+                <p class="text-red-600 text-xs mt-1"> {{ form.nombre.errors.0 }}</p>
+            {% endif %}
+        </div>
+
+        <div>
+            <label class="block font-semibold text-sm text-gray-700 mb-1.5">Categoría de Uso / Destino:</label>
+            {{ form.categoria }}
+            {% if form.categoria.errors %}
+                <p class="text-red-600 text-xs mt-1"> {{ form.categoria.errors.0 }}</p>
+            {% endif %}
+            <p class="text-gray-400 text-xs mt-1">Define en qué secciones del inventario se desplegará esta marca.</p>
+        </div>
+        
+        <div class="flex justify-end space-x-3 pt-4 border-t">
+            <a href="{% url 'marca_list' %}" class="bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold py-2 px-4 rounded text-sm transition-colors">
+                Cancelar
+            </a>
+            <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-5 rounded text-sm shadow transition-colors">
+                Guardar Marca
+            </button>
+        </div>
+    </form>
+</div>
+{% endblock %}

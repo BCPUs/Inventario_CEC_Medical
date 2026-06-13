@@ -1,22 +1,149 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib.auth.models import User
-from .models import EquipoMedico, MovimientoInventario, Repuesto, Herramienta
-from .forms import UserForm, EquipoMedicoForm, MovimientoForm, RepuestoForm, HerramientaForm
+from django.utils import timezone
 from django.contrib import messages
-
-
-# CONFIGURACIÓN Y ENRUTAMIENTO BASE
+from .models import EquipoMedico, MovimientoInventario, Repuesto, Herramienta, Marca, OrdenTrabajo
+from .forms import UserForm, EquipoMedicoForm, RepuestoForm, HerramientaForm, MarcaForm, OrdenTrabajoForm, MovimientoOrdenForm
 
 def admin_required(user):
     return user.is_staff
 
 def home(request):
     if request.user.is_authenticated:
-        return redirect('equipo_list')
+        return redirect('orden_list')
     return redirect('login')
 
-# GESTIÓN DE USUARIOS
+# CRUD MARCAS (SIN ACCIÓN DE ELIMINACIÓN)
+@login_required
+def marca_list(request):
+    marcas = Marca.objects.all().order_by('categoria', 'nombre')
+    return render(request, 'inventario/marca_list.html', {'marcas': marcas})
+
+@login_required
+def marca_create(request):
+    if request.method == 'POST':
+        form = MarcaForm(request.POST)
+        if form.is_valid():
+            form.save()
+            messages.success(request, "Nueva marca estandarizada agregada correctamente.")
+            return redirect('marca_list')
+    else:
+        form = MarcaForm()
+    return render(request, 'inventario/marca_form.html', {'form': form, 'title': 'Crear Marca Estándar'})
+
+@login_required
+def marca_update(request):
+    pk = request.GET.get('id') or request.POST.get('id')
+    marca = get_object_or_404(Marca, pk=pk)
+    if request.method == 'POST':
+        form = MarcaForm(request.POST, instance=marca)
+        if form.is_valid():
+            form.save()
+            messages.success(request, "Catálogo de marca modificado con éxito.")
+            return redirect('marca_list')
+    else:
+        form = MarcaForm(instance=marca)
+    return render(request, 'inventario/marca_form.html', {'form': form, 'title': 'Modificar Marca'})
+
+
+# GESTIÓN DE REPARACIONES (ÓRDENES DE TRABAJO)
+@login_required
+def orden_list(request):
+    ordenes = OrdenTrabajo.objects.all()
+    return render(request, 'inventario/orden_list.html', {'ordenes': ordenes})
+
+@login_required
+def orden_create(request):
+    if request.method == 'POST':
+        form = OrdenTrabajoForm(request.POST)
+        if form.is_valid():
+            orden = form.save()
+            # Forzar cambio de estado automático del dispositivo médico
+            orden.equipo.estado = 'reparacion'
+            orden.equipo.save()
+            messages.success(request, f"Orden {orden.secuencial} aperturada. Equipo configurado 'En Reparación'.")
+            return redirect('orden_detail', pk=orden.pk)
+    else:
+        form = OrdenTrabajoForm()
+    return render(request, 'inventario/orden_form.html', {'form': form, 'title': 'Recepción de Equipo - Orden de Trabajo'})
+
+@login_required
+def orden_detail(request, pk):
+    orden = get_object_or_404(OrdenTrabajo, pk=pk)
+    insumos_utilizados = orden.insumos.all() # Historial con fechas exactas
+    return render(request, 'inventario/orden_detail.html', {
+        'orden': orden,
+        'insumos': insumos_utilizados
+    })
+
+@login_required
+def orden_agregar_repuesto(request, pk):
+    orden = get_object_or_404(OrdenTrabajo, pk=pk)
+    if orden.estado != 'abierta':
+        messages.error(request, "No puede alterar una orden clausurada.")
+        return redirect('orden_detail', pk=orden.pk)
+
+    if request.method == 'POST':
+        form = MovimientoOrdenForm(request.POST)
+        if form.is_valid():
+            movimiento = form.save(commit=False)
+            movimiento.orden_trabajo = orden
+            movimiento.tecnico = request.user
+            movimiento.tipo = 'egreso' # Descuenta stock de forma mandatoria
+            try:
+                movimiento.save()
+                messages.success(request, f"Insumo {movimiento.repuesto.nombre} inyectado a la orden de trabajo.")
+                return redirect('orden_detail', pk=orden.pk)
+            except ValueError as e:
+                messages.error(request, str(e))
+    else:
+        form = MovimientoOrdenForm()
+    return render(request, 'inventario/orden_add_repuesto.html', {'form': form, 'orden': orden})
+
+@login_required
+def orden_devolver_repuesto(request, mov_id):
+    """ Escenario de devolución pedido por el docente: Restituye partes no usadas al inventario global """
+    movimiento_origen = get_object_or_404(MovimientoInventario, pk=mov_id, tipo='egreso')
+    orden = movimiento_origen.orden_trabajo
+    
+    if orden.estado != 'abierta':
+        messages.error(request, "La orden asociada está cerrada.")
+        return redirect('orden_detail', pk=orden.pk)
+
+    # Crear la transacción espejo en el Kardex (Tipo: Devolución)
+    MovimientoInventario.objects.create(
+        repuesto=movimiento_origen.repuesto,
+        tecnico=request.user,
+        orden_trabajo=orden,
+        tipo='devolucion',
+        cantidad=movimiento_origen.cantidad,
+        observaciones=f"Devolución automática al inventario. Movimiento Ref Original ID: {movimiento_origen.id}"
+    )
+    
+    # Cambiar leyenda del original para evitar reprocesos redundantes
+    movimiento_origen.observaciones = f"[REVERTIDO / DEVUELTO] {movimiento_origen.observaciones}"
+    movimiento_origen.save()
+    
+    messages.success(request, f"Devolución procesada. Las unidades de {movimiento_origen.repuesto.nombre} reingresaron a bodega.")
+    return redirect('orden_detail', pk=orden.pk)
+
+@login_required
+def orden_cerrar(request, pk):
+    orden = get_object_or_404(OrdenTrabajo, pk=pk)
+    estado_cierre = request.POST.get('estado_cierre') # 'reparada' o 'sin_reparacion'
+    
+    if request.method == 'POST' and estado_cierre in ['reparada', 'sin_reparacion']:
+        orden.estado = estado_cierre
+        orden.fecha_finalizacion = timezone.now()
+        orden.save()
+        
+        # Reajuste del activo operativo médico
+        orden.equipo.estado = 'bueno' if estado_cierre == 'reparada' else 'de baja'
+        orden.equipo.save()
+        
+        messages.success(request, f"Orden de trabajo {orden.secuencial} archivada con éxito. Historial blindado.")
+    return redirect('orden_detail', pk=orden.pk)
 
 @login_required
 @user_passes_test(admin_required)
@@ -38,9 +165,6 @@ def user_create(request):
     else:
         form = UserForm()
     return render(request, 'inventario/user_form.html', {'form': form, 'title': 'Registrar Usuario'})
-
-
-#EQUIPOS MÉDICOS
 
 @login_required
 def equipo_list(request):
@@ -80,9 +204,6 @@ def equipo_delete(request):
         return redirect('equipo_list')
     return render(request, 'inventario/equipo_confirm_delete.html', {'equipo': equipo})
 
-
-#REPUESTOS
-
 @login_required
 def repuesto_list(request):
     repuestos = Repuesto.objects.all().order_by('nombre')
@@ -118,18 +239,14 @@ def repuesto_update(request):
 def repuesto_delete(request):
     pk = request.GET.get('id') or request.POST.get('id')
     repuesto = get_object_or_404(Repuesto, pk=pk)
-    
-    if repuesto.movimientoinventario_set.exists():
-        messages.error(request, f"No se puede eliminar el repuesto '{repuesto.nombre}' porque contiene transacciones activas en el historial de movimientos.")
+    if repuesto.movimientos.exists():
+        messages.error(request, f"Imposible eliminar '{repuesto.nombre}' debido a transacciones indexadas en el Kardex.")
         return redirect('repuesto_list')
-        
     if request.method == 'POST':
         repuesto.delete()
-        messages.success(request, "Repuesto eliminado correctamente de los catálogos.")
+        messages.success(request, "Repuesto removido de catálogos.")
         return redirect('repuesto_list')
     return render(request, 'inventario/repuesto_confirm_delete.html', {'repuesto': repuesto})
-
-#HERRAMIENTAS
 
 @login_required
 def herramienta_list(request):
@@ -142,7 +259,7 @@ def herramienta_create(request):
         form = HerramientaForm(request.POST)
         if form.is_valid():
             form.save()
-            messages.success(request, "Herramienta registrada exitosamente.")
+            messages.success(request, "Herramienta registrada.")
             return redirect('herramienta_list')
     else:
         form = HerramientaForm()
@@ -156,7 +273,6 @@ def herramienta_update(request):
         form = HerramientaForm(request.POST, instance=herramienta)
         if form.is_valid():
             form.save()
-            messages.success(request, "Datos de la herramienta actualizados.")
             return redirect('herramienta_list')
     else:
         form = HerramientaForm(instance=herramienta)
@@ -168,33 +284,10 @@ def herramienta_delete(request):
     herramienta = get_object_or_404(Herramienta, pk=pk)
     if request.method == 'POST':
         herramienta.delete()
-        messages.success(request, "Herramienta velocidad eliminada correctamente.")
         return redirect('herramienta_list')
     return render(request, 'inventario/herramienta_confirm_delete.html', {'herramienta': herramienta})
-
-
-# HISTORIAL DE MOVIMIENTOS (KARDEX)
 
 @login_required
 def movimiento_list(request):
     movimientos = MovimientoInventario.objects.all().order_by('-fecha')
     return render(request, 'inventario/movimiento_list.html', {'movimientos': movimientos})
-
-@login_required
-def registrar_movimiento(request):
-    if request.method == 'POST':
-        form = MovimientoForm(request.POST)
-        if form.is_valid():
-            movimiento = form.save(commit=False)
-            movimiento.tecnico = request.user
-            
-            try:
-                movimiento.save() 
-                messages.success(request, "Movimiento registrado. Stock actualizado automáticamente.")
-                return redirect('equipo_list') 
-            except ValueError as e:
-                messages.error(request, str(e))
-    else:
-        form = MovimientoForm()
-        
-    return render(request, 'inventario/movimiento_form.html', {'form': form})

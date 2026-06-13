@@ -1,37 +1,48 @@
 {% extends 'base.html' %}
 {% block content %}
 <div class="flex justify-between items-center mb-6 border-b pb-4">
-    <h2 class="text-2xl font-bold text-gray-800">Historial de Movimientos</h2>
-    <a href="{% url 'registrar_movimiento' %}" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded shadow">
-        + Nuevo Movimiento
-    </a>
-</div>
+    <h2 class="text-2xl font-bold text-gray-800">Historial de Movimientos (Kardex)</h2>
+    </div>
 
 <div class="overflow-x-auto bg-white rounded-lg shadow">
     <table class="min-w-full text-left text-sm">
         <thead class="bg-gray-50 text-gray-400 uppercase text-xs text-center">
             <tr>
                 <th class="px-6 py-4">Fecha</th>
-                <th class="px-6 py-4">Tipo</th>
-                <th class="px-6 py-4">Repuesto</th>
+                <th class="px-6 py-4">Tipo de Transacción</th>
+                <th class="px-6 py-4">Repuesto / Insumo</th>
                 <th class="px-6 py-4">Cantidad</th>
-                <th class="px-6 py-4">Técnico</th>
+                <th class="px-6 py-4">Operador de Inventario</th>
             </tr>
         </thead>
         <tbody class="text-center">
             {% for mov in movimientos %}
-            <tr class="border-b hover:bg-gray-50">
-                <td class="px-6 py-4 text-gray-500">{{ mov.fecha|date:"d/m/Y H:i" }}</td>
-                <td class="px-6 py-4 font-bold {% if mov.tipo == 'entrada' %}text-green-600{% else %}text-red-600{% endif %}">
+            <tr class="border-b hover:bg-gray-50 transition-colors">
+                <td class="px-6 py-4 text-gray-500 font-medium">{{ mov.fecha|date:"d/m/Y H:i" }}</td>
+                <td class="px-6 py-4 font-bold 
+                    {% if mov.tipo == 'compra' or mov.tipo == 'devolucion' %}
+                        text-green-600
+                    {% elif mov.tipo == 'egreso' %}
+                        text-red-600
+                    {% else %}
+                        text-gray-600
+                    {% endif %}">
                     {{ mov.get_tipo_display }}
                 </td>
-                <td class="px-6 py-4">{{ mov.repuesto.nombre }}</td>
-                <td class="px-6 py-4 font-bold">{{ mov.cantidad }}</td>
-                <td class="px-6 py-4 text-gray-600">{{ mov.tecnico.username|default:"N/A" }}</td>
+                <td class="px-6 py-4 text-gray-800 font-medium">{{ mov.repuesto.nombre }}</td>
+                <td class="px-6 py-4 font-extrabold text-gray-900">{{ mov.cantidad }}</td>
+                <td class="px-6 py-4 text-gray-600">
+                    <span class="bg-gray-100 px-2.5 py-1 rounded-full text-xs font-semibold">
+                        @{{ mov.tecnico.username|default:"N/A" }}
+                    </span>
+                </td>
             </tr>
             {% empty %}
             <tr>
-                <td colspan="5" class="px-6 py-8 text-center text-gray-500">No hay movimientos registrados.</td>
+                <td colspan="5" class="px-6 py-12 text-center text-gray-400 font-medium">
+                    <div class="text-lg mb-1"></div>
+                    No hay movimientos registrados en el Kardex global.
+                </td>
             </tr>
             {% endfor %}
         </tbody>

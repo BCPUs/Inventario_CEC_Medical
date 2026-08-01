@@ -1,0 +1,102 @@
+================================================================================
+                     CAMBIOS REALIZADOS - CEC MEDICAL
+================================================================================
+
+Este documento detalla todas las modificaciones, correcciones, mejoras y nuevas
+validaciones aplicadas al proyecto de inventario de CEC Medical de acuerdo con
+los requisitos de arquitectura, funcionalidad e interfaz de usuario solicitados.
+
+--------------------------------------------------------------------------------
+1. REORGANIZACIÓN ARQUITECTÓNICA (Capas y Responsabilidades)
+--------------------------------------------------------------------------------
+Se reorganizó el código del proyecto utilizando una arquitectura por capas
+sencilla, limpia y altamente mantenible, separando las responsabilidades de la
+siguiente manera:
+
+- models:
+  * El archivo monolítico `inventario/models.py` fue eliminado.
+  * Se crearon módulos individuales bajo `inventario/models/`:
+    - `equipo.py`: Modelo `EquipoMedico`.
+    - `repuesto.py`: Modelo `Repuesto`.
+    - `herramienta.py`: Modelo `Herramienta`.
+    - `movimiento.py`: Modelo `MovimientoInventario`.
+    - `__init__.py`: Expone todos los modelos para mantener compatibilidad de importaciones.
+
+- forms:
+  * El archivo monolítico `inventario/forms.py` fue eliminado.
+  * Se crearon módulos individuales bajo `inventario/forms/`:
+    - `usuario.py`: `UserForm`.
+    - `equipo.py`: `EquipoMedicoForm`.
+    - `repuesto.py`: `RepuestoForm`.
+    - `herramienta.py`: `HerramientaForm`.
+    - `movimiento.py`: `MovimientoForm`.
+    - `__init__.py`: Expone todos los formularios.
+
+- services:
+  * Se creó la nueva capa de servicios bajo `inventario/services/` con la lógica de negocio:
+    - `equipo_service.py`
+    - `herramienta_service.py`
+    - `repuesto_service.py`
+    - `movimiento_service.py` (Maneja las transacciones y ajustes de stock de forma segura).
+    - `usuario_service.py`
+    - `__init__.py`: Expone las funciones de servicios.
+
+- views:
+  * El archivo monolítico `inventario/views.py` fue eliminado.
+  * Se crearon módulos de vistas especializados bajo `inventario/views/`:
+    - `home.py`, `usuario.py`, `equipo.py`, `repuesto.py`, `herramienta.py`, `movimiento.py`.
+  * Se simplificaron las vistas para que únicamente:
+    1. Reciban la petición HTTP.
+    2. Validen el formulario correspondiente.
+    3. Llamen al Service correspondiente para ejecutar la acción.
+    4. Devuelvan la respuesta/redirección correspondiente.
+
+--------------------------------------------------------------------------------
+2. ERRORES ENCONTRADOS Y CORREGIDOS
+--------------------------------------------------------------------------------
+- Layout Squeezing (Descuadre del Menú Lateral):
+  * Causa: Las tablas de "Bodega de repuestos" y "Gestión de herramientas" forzaban
+    el ancho completo y reducían o colapsaban la barra lateral (`aside`).
+  * Corrección: Se agregó la clase `min-w-0` al contenedor `<main>` en `base.html`
+    para asegurar que el layout mantenga el diseño, proporciones y tamaño de la barra
+    lateral sin importar el ancho de las tablas.
+- Exposición de Lógica en Modelos y Vistas:
+  * Toda la lógica de alteración de stock e incrementos/decrementos vivía de forma
+    acoplada en `models.py` y `views.py`. Se centralizó completamente en la capa de servicios.
+
+--------------------------------------------------------------------------------
+3. VALIDACIONES AGREGADAS Y MEJORAS REALIZADAS
+--------------------------------------------------------------------------------
+- No permitir stock negativo:
+  * Añadida validación en `RepuestoForm` para evitar valores menores a 0.
+- No permitir precio negativo:
+  * Añadida validación en `RepuestoForm` para evitar precios menores a 0.
+- No permitir cantidades negativas:
+  * Añadida validación en `MovimientoForm` para evitar que la cantidad del movimiento sea negativa.
+- No permitir retirar más stock del disponible:
+  * Validado tanto en el formulario (`MovimientoForm`) como en la capa de servicio
+    (`movimiento_service.py`) bajo una transacción atómica para prevenir inconsistencias de stock.
+- Mostrar el mensaje de error en la misma pantalla:
+  * Todos los errores de validación de los formularios y servicios son capturados
+    e integrados en el contexto de la vista para desplegarse limpiamente sobre la misma pantalla.
+- Generación automática de Número de Orden (No editable):
+  * Se agregó el campo `n_orden` al modelo `MovimientoInventario`.
+  * Se genera automáticamente de forma secuencial y única (p. ej., `ORD-0001`, `ORD-0002`)
+    en la capa de servicios (`movimiento_service.py`) y se excluyó de los campos editables del formulario.
+- Solo permitir el uso del punto (.) como separador decimal:
+  * Se implementó validación de formato estricto en el campo `precio` de `RepuestoForm`
+    para bloquear el uso de comas (`,`) como separador decimal.
+- Límites de longitud:
+  * Código de herramienta: Máximo 50 caracteres (Validación añadida en `HerramientaForm`).
+  * Marca de herramienta / Equipo Médico: Máximo 100 caracteres (Modelo y formulario actualizados).
+
+--------------------------------------------------------------------------------
+4. CONFIGURACIÓN ADMINISTRATIVA Y BASE DE DATOS
+--------------------------------------------------------------------------------
+- Se registraron de forma personalizada todos los modelos (`EquipoMedico`, `Repuesto`,
+  `Herramienta`, y `MovimientoInventario`) en Django Admin (`inventario/admin.py`) con
+  buscadores, filtros laterales y columnas ordenadas.
+- Se crearon y aplicaron las migraciones correspondientes de base de datos para registrar
+  las nuevas columnas y restricciones de longitud de caracteres.
+- Se creó un archivo `.gitignore` para mantener limpio el historial de Git, excluyendo
+  cualquier archivo de caché compile bytecode (`.pyc`, `__pycache__`) y logs de desarrollo.

@@ -1,0 +1,14 @@
+# Python Cache
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Logs
+*.log
+django_dev_server.log
+
+# Databases
+*.sqlite3
+
+# OS files
+.DS_Store

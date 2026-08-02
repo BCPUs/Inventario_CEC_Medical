@@ -1,5 +1,6 @@
 from django.db import models
 from django.contrib.auth.models import User
+from django.core.validators import MinValueValidator
 from .repuesto import Repuesto
 from .equipo import EquipoMedico
 
@@ -14,7 +15,10 @@ class MovimientoInventario(models.Model):
     equipo_destino = models.ForeignKey(EquipoMedico, on_delete=models.SET_NULL, null=True, blank=True, verbose_name="Equipo en Mantenimiento (Solo si es Salida)")
 
     tipo = models.CharField(max_length=10, choices=TIPO_CHOICES, verbose_name="Tipo de Movimiento")
-    cantidad = models.PositiveIntegerField(verbose_name="Cantidad")
+    cantidad = models.PositiveIntegerField(
+        validators=[MinValueValidator(0, message="El valor no puede ser negativo.")],
+        verbose_name="Cantidad"
+    )
     fecha = models.DateTimeField(auto_now_add=True, verbose_name="Fecha y Hora")
     observaciones = models.TextField(blank=True, null=True, verbose_name="Observaciones / Motivo")
 

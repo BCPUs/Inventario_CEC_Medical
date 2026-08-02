@@ -43,7 +43,7 @@ class InventarioValidationsTestCase(TestCase):
         form = RepuestoForm(data=data)
         self.assertFalse(form.is_valid())
         self.assertIn('stock', form.errors)
-        self.assertEqual(form.errors['stock'][0], "No permitir stock negativo.")
+        self.assertEqual(form.errors['stock'][0], "El valor no puede ser negativo.")
 
     def test_precio_not_negative_validation_in_form(self):
         # Repuesto form: test price cannot be negative
@@ -58,7 +58,7 @@ class InventarioValidationsTestCase(TestCase):
         form = RepuestoForm(data=data)
         self.assertFalse(form.is_valid())
         self.assertIn('precio', form.errors)
-        self.assertEqual(form.errors['precio'][0], "No permitir precio negativo.")
+        self.assertEqual(form.errors['precio'][0], "El precio no puede ser negativo.")
 
     def test_decimal_separator_dot_only(self):
         # Repuesto form: test only dot allowed as decimal separator
@@ -74,7 +74,7 @@ class InventarioValidationsTestCase(TestCase):
         form = RepuestoForm(data=data)
         self.assertFalse(form.is_valid())
         self.assertIn('precio', form.errors)
-        self.assertEqual(form.errors['precio'][0], "Solo permitir el uso del punto (.) como separador decimal.")
+        self.assertEqual(form.errors['precio'][0], "Utilice punto (.) como separador decimal.")
 
     def test_herramienta_code_and_brand_limits(self):
         # Herramienta code max 50 characters, brand max 100 characters
@@ -117,7 +117,7 @@ class InventarioValidationsTestCase(TestCase):
         form = MovimientoForm(data=data)
         self.assertFalse(form.is_valid())
         self.assertIn('cantidad', form.errors)
-        self.assertEqual(form.errors['cantidad'][0], "No permitir cantidades negativas.")
+        self.assertEqual(form.errors['cantidad'][0], "El valor no puede ser negativo.")
 
     def test_movimiento_withdraw_exceeds_available_stock(self):
         # Movimiento form: cannot withdraw more stock than available
@@ -132,7 +132,7 @@ class InventarioValidationsTestCase(TestCase):
         form = MovimientoForm(data=data)
         self.assertFalse(form.is_valid())
         self.assertIn('__all__', form.errors)
-        self.assertEqual(form.errors['__all__'][0], "No permitir retirar más stock del disponible.")
+        self.assertEqual(form.errors['__all__'][0], "No existe suficiente stock disponible. Stock disponible: 10")
 
     def test_auto_generation_of_sequential_order_number(self):
         # Movimiento register service should auto-generate sequential ORD-XXXX

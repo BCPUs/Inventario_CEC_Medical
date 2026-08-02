@@ -4,7 +4,21 @@
 <div class="max-w-2xl mx-auto bg-white p-8 rounded-lg shadow-md mt-10">
     <h2 class="text-2xl font-bold text-blue-800 mb-6 border-b pb-2">Registrar Movimiento de Inventario</h2>
 
-    <!-- Bloque para mostrar errores de stock insuficiente -->
+    <!-- Bloque para mostrar errores de formulario -->
+    {% if form.errors or form.non_field_errors %}
+    <div class="bg-red-50 border-l-4 border-red-500 p-4 mb-5 rounded shadow-sm text-sm text-red-700 font-medium space-y-1">
+        {% for error in form.non_field_errors %}
+            <p>{{ error }}</p>
+        {% endfor %}
+        {% for field in form %}
+            {% for error in field.errors %}
+                <p>{{ error }}</p>
+            {% endfor %}
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <!-- Bloque para mostrar mensajes del sistema -->
     {% if messages %}
         {% for message in messages %}
             <div class="mb-4 p-4 rounded {% if message.tags == 'error' %}bg-red-100 text-red-700{% else %}bg-green-100 text-green-700{% endif %}">

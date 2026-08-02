@@ -1,12 +1,16 @@
 from django.urls import path
 from django.contrib.auth import views as auth_views
 from . import views
+from inventario.forms.usuario import CustomAuthenticationForm
 
 urlpatterns = [
     path('', views.home, name='home'),
     
     # Autenticación nativa
-    path('login/', auth_views.LoginView.as_view(template_name='inventario/login.html'), name='login'),
+    path('login/', auth_views.LoginView.as_view(
+        template_name='inventario/login.html',
+        authentication_form=CustomAuthenticationForm
+    ), name='login'),
     path('logout/', auth_views.LogoutView.as_view(next_page='login'), name='logout'),
     
     # CRUD Usuarios 

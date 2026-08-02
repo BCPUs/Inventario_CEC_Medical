@@ -1,5 +1,6 @@
 from django import forms
 from django.contrib.auth.models import User
+from django.contrib.auth.forms import AuthenticationForm
 
 class UserForm(forms.ModelForm):
     password = forms.CharField(widget=forms.PasswordInput(), label="Contraseña", required=False)
@@ -17,3 +18,8 @@ class UserForm(forms.ModelForm):
         if len(username) < 4:
             raise forms.ValidationError("El nombre de usuario debe tener al menos 4 caracteres.")
         return username
+
+class CustomAuthenticationForm(AuthenticationForm):
+    error_messages = {
+        'invalid_login': "Usuario o contraseña incorrectos.",
+    }

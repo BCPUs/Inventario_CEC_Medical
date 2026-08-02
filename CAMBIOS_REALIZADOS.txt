@@ -1,6 +1,7 @@
 ================================================================================
                      CAMBIOS REALIZADOS - CEC MEDICAL
 ================================================================================
+Fecha de última actualización: 12 de Junio de 2024
 
 Este documento detalla todas las modificaciones, correcciones, mejoras y nuevas
 validaciones aplicadas al proyecto de inventario de CEC Medical de acuerdo con
@@ -25,7 +26,7 @@ siguiente manera:
 - forms:
   * El archivo monolítico `inventario/forms.py` fue eliminado.
   * Se crearon módulos individuales bajo `inventario/forms/`:
-    - `usuario.py`: `UserForm`.
+    - `usuario.py`: `UserForm` y `CustomAuthenticationForm`.
     - `equipo.py`: `EquipoMedicoForm`.
     - `repuesto.py`: `RepuestoForm`.
     - `herramienta.py`: `HerramientaForm`.
@@ -63,35 +64,62 @@ siguiente manera:
 - Exposición de Lógica en Modelos y Vistas:
   * Toda la lógica de alteración de stock e incrementos/decrementos vivía de forma
     acoplada en `models.py` y `views.py`. Se centralizó completamente en la capa de servicios.
+- Inputs HTML que permitían decrementar a valores negativos:
+  * Causa: Inputs numéricos estándar permitían escribir o presionar flechas para valores menores a 0.
+  * Corrección: Se añadió el atributo `min="0"` en todos los campos numéricos de formularios en Django.
+- Error en Mensajes de Credenciales Incorrectas (Login):
+  * Causa: El flujo nativo de autenticación de Django no mostraba un mensaje de error exacto
+    ni renderizaba un cuadro de alerta visual en `login.html`.
+  * Corrección: Se implementó un `CustomAuthenticationForm` y se editó el template para mostrar
+    con precisión el mensaje: "Usuario o contraseña incorrectos."
 
 --------------------------------------------------------------------------------
 3. VALIDACIONES AGREGADAS Y MEJORAS REALIZADAS
 --------------------------------------------------------------------------------
 - No permitir stock negativo:
-  * Añadida validación en `RepuestoForm` para evitar valores menores a 0.
+  * Añadida validación a nivel de modelo con `MinValueValidator(0)` y en `RepuestoForm`
+    para evitar valores menores a 0, mostrando: "El valor no puede ser negativo."
 - No permitir precio negativo:
-  * Añadida validación en `RepuestoForm` para evitar precios menores a 0.
+  * Añadida validación a nivel de modelo con `MinValueValidator(0)` y en `RepuestoForm`
+    para evitar precios menores a 0, mostrando: "El precio no puede ser negativo."
 - No permitir cantidades negativas:
-  * Añadida validación en `MovimientoForm` para evitar que la cantidad del movimiento sea negativa.
+  * Añadida validación a nivel de modelo con `MinValueValidator(0)` y en `MovimientoForm`
+    para evitar que la cantidad del movimiento sea negativa, mostrando: "El valor no puede ser negativo."
 - No permitir retirar más stock del disponible:
   * Validado tanto en el formulario (`MovimientoForm`) como en la capa de servicio
-    (`movimiento_service.py`) bajo una transacción atómica para prevenir inconsistencias de stock.
+    (`movimiento_service.py`) bajo una transacción atómica para prevenir inconsistencias de stock,
+    mostrando exactamente: "No existe suficiente stock disponible. Stock disponible: <cantidad>"
 - Mostrar el mensaje de error en la misma pantalla:
   * Todos los errores de validación de los formularios y servicios son capturados
     e integrados en el contexto de la vista para desplegarse limpiamente sobre la misma pantalla.
-- Generación automática de Número de Orden (No editable):
+- Generación automática de Número de Orden (No editable / No modificable):
   * Se agregó el campo `n_orden` al modelo `MovimientoInventario`.
   * Se genera automáticamente de forma secuencial y única (p. ej., `ORD-0001`, `ORD-0002`)
     en la capa de servicios (`movimiento_service.py`) y se excluyó de los campos editables del formulario.
+  * Al editar registros, el número de orden se mantiene intacto y no es modificable.
 - Solo permitir el uso del punto (.) como separador decimal:
   * Se implementó validación de formato estricto en el campo `precio` de `RepuestoForm`
-    para bloquear el uso de comas (`,`) como separador decimal.
+    para bloquear el uso de comas (`,`) como separador decimal, mostrando: "Utilice punto (.) como separador decimal."
 - Límites de longitud:
-  * Código de herramienta: Máximo 50 caracteres (Validación añadida en `HerramientaForm`).
+  * Código de herramienta: Máximo 50 caracteres (Validación añadida en `HerramientaForm` y modelo).
   * Marca de herramienta / Equipo Médico: Máximo 100 caracteres (Modelo y formulario actualizados).
 
 --------------------------------------------------------------------------------
-4. CONFIGURACIÓN ADMINISTRATIVA Y BASE DE DATOS
+4. PRUEBAS EJECUTADAS
+--------------------------------------------------------------------------------
+Se ejecutaron un total de 7 suites de pruebas automáticas integradas en `inventario/tests.py`:
+- `test_stock_not_negative_validation_in_form`: Comprueba que no se acepten stocks iniciales negativos.
+- `test_precio_not_negative_validation_in_form`: Comprueba que no se acepten precios unitarios negativos.
+- `test_decimal_separator_dot_only`: Valida el rechazo de comas en favor de puntos decimales.
+- `test_herramienta_code_and_brand_limits`: Asegura que el código tenga max 50 caracteres y marca max 100 caracteres.
+- `test_movimiento_negative_quantity`: Asegura que la cantidad ingresada de movimiento no sea negativa.
+- `test_movimiento_withdraw_exceeds_available_stock`: Asegura que no se retire más stock del existente, mostrando el error correspondiente.
+- `test_auto_generation_of_sequential_order_number`: Valida el cálculo incremental automático de `n_orden` (ORD-0001, ORD-0002, etc.).
+
+Todas las pruebas se ejecutaron con éxito con un resultado de **OK**.
+
+--------------------------------------------------------------------------------
+5. CONFIGURACIÓN ADMINISTRATIVA Y ESTADO FINAL DEL SISTEMA
 --------------------------------------------------------------------------------
 - Se registraron de forma personalizada todos los modelos (`EquipoMedico`, `Repuesto`,
   `Herramienta`, y `MovimientoInventario`) en Django Admin (`inventario/admin.py`) con
@@ -100,3 +128,4 @@ siguiente manera:
   las nuevas columnas y restricciones de longitud de caracteres.
 - Se creó un archivo `.gitignore` para mantener limpio el historial de Git, excluyendo
   cualquier archivo de caché compile bytecode (`.pyc`, `__pycache__`) y logs de desarrollo.
+- **Estado final:** Estable, 100% operativo sin errores pendientes, listo para su ejecución local.

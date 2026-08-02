@@ -34,21 +34,22 @@ def registrar_movimiento_servicio(form_instance, tecnico_user):
         repuesto = movimiento.repuesto
 
         if movimiento.cantidad < 0:
-            raise ValidationError("No permitir cantidades negativas.")
+            raise ValidationError("El valor no puede ser negativo.")
 
         if movimiento.tipo == 'entrada':
             repuesto.stock += movimiento.cantidad
         elif movimiento.tipo == 'salida':
             if repuesto.stock < movimiento.cantidad:
-                raise ValidationError("No permitir retirar más stock del disponible.")
+                raise ValidationError(f"No existe suficiente stock disponible. Stock disponible: {repuesto.stock}")
             repuesto.stock -= movimiento.cantidad
 
         # Ensure repuesto doesn't end up negative
         if repuesto.stock < 0:
-            raise ValidationError("No permitir stock negativo.")
+            raise ValidationError("El valor no puede ser negativo.")
 
-        # Set auto-generated sequential order number
-        movimiento.n_orden = generar_siguiente_orden()
+        # Check if the record already has an order number, so we don't overwrite it when editing
+        if not movimiento.n_orden:
+            movimiento.n_orden = generar_siguiente_orden()
 
         # Save updated objects
         repuesto.save()

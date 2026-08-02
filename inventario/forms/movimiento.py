@@ -4,10 +4,10 @@ from inventario.models.movimiento import MovimientoInventario
 class MovimientoForm(forms.ModelForm):
     cantidad = forms.IntegerField(
         min_value=0,
-        widget=forms.NumberInput(attrs={'class': 'w-full border rounded p-2'}),
+        widget=forms.NumberInput(attrs={'class': 'w-full border rounded p-2', 'min': '0'}),
         label="Cantidad",
         error_messages={
-            'min_value': "No permitir cantidades negativas.",
+            'min_value': "El valor no puede ser negativo.",
         }
     )
 
@@ -21,6 +21,12 @@ class MovimientoForm(forms.ModelForm):
             'equipo_destino': forms.Select(attrs={'class': 'w-full border rounded p-2'}),
         }
 
+    def clean_cantidad(self):
+        cantidad = self.cleaned_data.get('cantidad')
+        if cantidad is not None and cantidad < 0:
+            raise forms.ValidationError("El valor no puede ser negativo.")
+        return cantidad
+
     def clean(self):
         cleaned_data = super().clean()
         repuesto = cleaned_data.get('repuesto')
@@ -30,6 +36,6 @@ class MovimientoForm(forms.ModelForm):
         if repuesto and tipo == 'salida' and cantidad is not None:
             if repuesto.stock < cantidad:
                 raise forms.ValidationError(
-                    "No permitir retirar más stock del disponible."
+                    f"No existe suficiente stock disponible. Stock disponible: {repuesto.stock}"
                 )
         return cleaned_data

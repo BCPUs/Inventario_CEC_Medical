@@ -1,6 +1,8 @@
 from django.db import models
 from django.contrib.auth.models import User
-from django.utils import timezone
+from django.core.exceptions import ValidationError
+from django.core.validators import MinValueValidator
+
 
 class Marca(models.Model):
     CATEGORIA_CHOICES = [
@@ -8,7 +10,7 @@ class Marca(models.Model):
         ('herramienta', 'Herramienta'),
     ]
     
-    nombre = models.CharField(max_length=50, unique=True, verbose_name="Nombre de la Marca")
+    nombre = models.CharField(max_length=100, unique=True, verbose_name="Nombre de la Marca")
     categoria = models.CharField(
         max_length=20, 
         choices=CATEGORIA_CHOICES, 
@@ -23,6 +25,7 @@ class Marca(models.Model):
         verbose_name = "Marca"
         verbose_name_plural = "Marcas"
         ordering = ['nombre']
+
 
 class EquipoMedico(models.Model):
     ESTADO_CHOICES = [
@@ -52,9 +55,18 @@ class EquipoMedico(models.Model):
 class Repuesto(models.Model):
     codigo = models.CharField(max_length=50, unique=True, verbose_name="Código de Repuesto")
     nombre = models.CharField(max_length=100, verbose_name="Nombre del Repuesto")
-    stock = models.IntegerField(default=0, verbose_name="Cantidad en Stock")
-    stock_minimo = models.IntegerField(default=2, verbose_name="Stock Mínimo Alerta")
-    precio = models.DecimalField(decimal_places=2, max_digits=10, verbose_name="Precio Unitario")
+    
+    # Restricción a nivel de campo (no permite valores < 0)
+    stock = models.PositiveIntegerField(default=0, verbose_name="Cantidad en Stock")
+    stock_minimo = models.PositiveIntegerField(default=2, verbose_name="Stock Mínimo Alerta")
+    
+    # Validador para Formularios y Admin (no admite precios en negativo)
+    precio = models.DecimalField(
+        decimal_places=2, 
+        max_digits=10, 
+        validators=[MinValueValidator(0.00)],
+        verbose_name="Precio Unitario"
+    )
     ubicacion = models.CharField(max_length=100, blank=True, null=True, verbose_name="Ubicación en Bodega")
 
     def __str__(self):
@@ -64,6 +76,17 @@ class Repuesto(models.Model):
         verbose_name = "Repuesto"
         verbose_name_plural = "Repuestos"
 
+        constraints = [
+            models.CheckConstraint(
+                check=models.Q(stock__gte=0),
+                name='repuesto_stock_no_negativo'
+            ),
+            models.CheckConstraint(
+                check=models.Q(precio__gte=0),
+                name='repuesto_precio_no_negativo'
+            )
+        ]
+
 
 class Herramienta(models.Model):
     ESTADO_CHOICES = [
@@ -72,6 +95,7 @@ class Herramienta(models.Model):
         ('mantenimiento', 'En Mantenimiento'),
         ('extraviada', 'Extraviada / Dada de Baja'),
     ]
+    
     codigo = models.CharField(max_length=50, unique=True, verbose_name="Código de Herramienta")
     nombre = models.CharField(max_length=100, verbose_name="Nombre de la Herramienta")
     marca = models.ForeignKey(Marca, on_delete=models.PROTECT, related_name='herramientas', verbose_name="Marca", null=True, blank=True)
@@ -93,13 +117,20 @@ class OrdenTrabajo(models.Model):
         ('sin_reparacion', 'No Reparar / De Baja'),
     ]
     
-    secuencial = models.CharField(max_length=20, unique=True, verbose_name="N° Orden de Trabajo")
+    secuencial = models.CharField(max_length=20, unique=True, verbose_name="N° Orden de Trabajo", editable=False)
     equipo = models.ForeignKey(EquipoMedico, on_delete=models.CASCADE, related_name='ordenes', verbose_name="Equipo Recibido")
     tecnico = models.CharField(max_length=150, verbose_name="Técnico Responsable")
     diagnostico_falla = models.TextField(verbose_name="Falla Reportada / Diagnóstico")
     estado = models.CharField(max_length=20, choices=ESTADO_ORDEN, default='abierta', verbose_name="Estado de Reparación")
     fecha_ingreso = models.DateTimeField(auto_now_add=True, verbose_name="Fecha de Recepción")
     fecha_finalizacion = models.DateTimeField(blank=True, null=True, verbose_name="Fecha de Cierre")
+
+    def save(self, *args, **kwargs):
+        if not self.secuencial:
+            ultima_orden = OrdenTrabajo.objects.all().order_by('id').last()
+            siguiente_num = (ultima_orden.id + 1) if ultima_orden else 1
+            self.secuencial = f"{siguiente_num:06d}"
+        super().save(*args, **kwargs)
 
     def __str__(self):
         return f"OT-{self.secuencial} ({self.equipo.nombre})"
@@ -126,7 +157,18 @@ class MovimientoInventario(models.Model):
     fecha = models.DateTimeField(auto_now_add=True, verbose_name="Fecha y Hora Transacción")
     observaciones = models.TextField(blank=True, null=True, verbose_name="Observaciones / Justificación")
 
+    def clean(self):
+        """Validación preventiva antes de guardar (formularios/admin)"""
+        super().clean()
+        if self.tipo == 'egreso' and self.repuesto_id and self.cantidad:
+            if self.repuesto.stock < self.cantidad:
+                raise ValidationError({
+                    'cantidad': f"Stock insuficiente en bodega. Solo dispones de {self.repuesto.stock} unidad(es) de {self.repuesto.nombre}."
+                })
+
     def save(self, *args, **kwargs):
+        self.full_clean()
+
         if self.pk is None: 
             if self.tipo in ['compra', 'devolucion']:
                 self.repuesto.stock += self.cantidad

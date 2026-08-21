@@ -13,12 +13,12 @@ urlpatterns = [
     path('usuarios/', views.user_list, name='user_list'),
     path('usuarios/nuevo/', views.user_create, name='user_create'),
     
-    # CRUD Marcas (Sin pasarela de eliminación por directriz)
+    # CRUD Marcas 
     path('marcas/', views.marca_list, name='marca_list'),
     path('marcas/nueva/', views.marca_create, name='marca_create'),
     path('marcas/editar/', views.marca_update, name='marca_update'),
     
-    # Módulo Clínico: Órdenes de Trabajo e Historial de Reparaciones
+    # Módulo ordenes de Trabajo e Historial de Reparaciones
     path('ordenes/', views.orden_list, name='orden_list'),
     path('ordenes/nueva/', views.orden_create, name='orden_create'),
     path('ordenes/<int:pk>/', views.orden_detail, name='orden_detail'),
@@ -26,7 +26,7 @@ urlpatterns = [
     path('ordenes/<int:pk>/cerrar/', views.orden_cerrar, name='orden_cerrar'),
     path('insumos/<int:pk>/devolver/', views.orden_devolver_repuesto, name='orden_devolver_repuesto'),
     
-    # Flujo de devoluciones (Kardex inverso de órdenes)
+    # Flujo de devoluciones 
     path('movimientos/devolver/<int:mov_id>/', views.orden_devolver_repuesto, name='orden_devolver_repuesto'),
 
     # CRUD Equipos 
@@ -35,7 +35,7 @@ urlpatterns = [
     path('equipos/editar/', views.equipo_update, name='equipo_update'),
     path('equipos/eliminar/', views.equipo_delete, name='equipo_delete'),
 
-    # Auditoría Global (Kardex Completo)
+    # Auditoría Global 
     path('movimientos/', views.movimiento_list, name='movimiento_list'),
 
     # CRUD Repuestos 

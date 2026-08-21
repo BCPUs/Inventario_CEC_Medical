@@ -8,9 +8,6 @@
     {% if form.non_field_errors %}
     <div class="bg-red-50 border-l-4 border-red-500 p-4 mb-5 rounded shadow-sm">
         <div class="flex">
-            <div class="flex-shrink-0">
-                <span class="text-red-500 font-bold"></span>
-            </div>
             <div class="ml-3 text-sm text-red-700 font-medium">
                 {% for error in form.non_field_errors %}
                     <p>{{ error }}</p>
@@ -29,7 +26,7 @@
                 {{ form.codigo }}
                 {% if form.codigo.errors %}
                     <div class="text-red-600 text-xs mt-1.5 font-semibold flex items-center space-x-1">
-                        <span> {% for error in form.codigo.errors %}{{ error }}{% endfor %}</span>
+                        <span>{% for error in form.codigo.errors %}{{ error }}{% endfor %}</span>
                     </div>
                 {% endif %}
             </div>
@@ -39,7 +36,7 @@
                 {{ form.nombre }}
                 {% if form.nombre.errors %}
                     <div class="text-red-600 text-xs mt-1.5 font-semibold flex items-center space-x-1">
-                        <span> {% for error in form.nombre.errors %}{{ error }}{% endfor %}</span>
+                        <span>{% for error in form.nombre.errors %}{{ error }}{% endfor %}</span>
                     </div>
                 {% endif %}
             </div>
@@ -49,7 +46,7 @@
                 {{ form.stock }}
                 {% if form.stock.errors %}
                     <div class="text-red-600 text-xs mt-1.5 font-semibold flex items-center space-x-1">
-                        <span> {% for error in form.stock.errors %}{{ error }}{% endfor %}</span>
+                        <span>{% for error in form.stock.errors %}{{ error }}{% endfor %}</span>
                     </div>
                 {% endif %}
             </div>
@@ -59,7 +56,7 @@
                 {{ form.stock_minimo }}
                 {% if form.stock_minimo.errors %}
                     <div class="text-red-600 text-xs mt-1.5 font-semibold flex items-center space-x-1">
-                        <span> {% for error in form.stock_minimo.errors %}{{ error }}{% endfor %}</span>
+                        <span>{% for error in form.stock_minimo.errors %}{{ error }}{% endfor %}</span>
                     </div>
                 {% endif %}
             </div>
@@ -79,7 +76,7 @@
                 {{ form.ubicacion }}
                 {% if form.ubicacion.errors %}
                     <div class="text-red-600 text-xs mt-1.5 font-semibold flex items-center space-x-1">
-                        <span> {% for error in form.ubicacion.errors %}{{ error }}{% endfor %}</span>
+                        <span>{% for error in form.ubicacion.errors %}{{ error }}{% endfor %}</span>
                     </div>
                 {% endif %}
             </div>
@@ -95,4 +92,25 @@
         </div>
     </form>
 </div>
+
+<!-- Scripts de validación e inyección de estilos -->
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        const stockInput = document.getElementById("id_stock");
+        const stockMinInput = document.getElementById("id_stock_minimo");
+        const precioInput = document.getElementById("id_precio");
+
+        if(stockInput) stockInput.setAttribute("min", "0");
+        if(stockMinInput) stockMinInput.setAttribute("min", "0");
+        if(precioInput) {
+            precioInput.setAttribute("min", "0.00");
+            precioInput.setAttribute("step", "0.01");
+        }
+
+        // Inyección de estilos Tailwind a los inputs del formulario
+        document.querySelectorAll('input, select, textarea').forEach(el => {
+            el.classList.add('w-full', 'px-3', 'py-2', 'border', 'rounded-md', 'bg-white', 'focus:ring-2', 'focus:ring-blue-500', 'focus:outline-none', 'text-sm');
+        });
+    });
+</script>
 {% endblock %}

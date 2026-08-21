@@ -23,7 +23,7 @@
                 <label class="block font-semibold text-sm text-gray-700 mb-1.5">N° de Orden:</label>
                 {{ form.secuencial }}
                 {% if form.secuencial.errors %}
-                    <p class="text-red-600 text-xs mt-1"> {{ form.secuencial.errors.0 }}</p>
+                    <p class="text-red-600 text-xs mt-1 font-semibold">{{ form.secuencial.errors.0 }}</p>
                 {% endif %}
             </div>
 
@@ -31,17 +31,15 @@
                 <label class="block font-semibold text-sm text-gray-700 mb-1.5">Equipo Hospitalario Recibido:</label>
                 {{ form.equipo }}
                 {% if form.equipo.errors %}
-                    <p class="text-red-600 text-xs mt-1"> {{ form.equipo.errors.0 }}</p>
+                    <p class="text-red-600 text-xs mt-1 font-semibold">{{ form.equipo.errors.0 }}</p>
                 {% endif %}
             </div>
 
             <div class="md:col-span-2">
                 <label class="block font-semibold text-sm text-gray-700 mb-1.5">Técnico Responsable:</label>
-                
                 {{ form.tecnico }}
-                
                 {% if form.tecnico.errors %}
-                    <p class="text-red-600 text-xs mt-1"> {{ form.tecnico.errors.0 }}</p>
+                    <p class="text-red-600 text-xs mt-1 font-semibold">{{ form.tecnico.errors.0 }}</p>
                 {% endif %}
             </div>
 
@@ -49,7 +47,7 @@
                 <label class="block font-semibold text-sm text-gray-700 mb-1.5">Diagnóstico de la Falla:</label>
                 {{ form.diagnostico_falla }}
                 {% if form.diagnostico_falla.errors %}
-                    <p class="text-red-600 text-xs mt-1"> {{ form.diagnostico_falla.errors.0 }}</p>
+                    <p class="text-red-600 text-xs mt-1 font-semibold">{{ form.diagnostico_falla.errors.0 }}</p>
                 {% endif %}
             </div>
         </div>
@@ -64,4 +62,11 @@
         </div>
     </form>
 </div>
+
+<script>
+    // Inyección de estilos Tailwind a los controles del formulario
+    document.querySelectorAll('input, select, textarea').forEach(el => {
+        el.classList.add('w-full', 'px-3', 'py-2', 'border', 'rounded-md', 'bg-white', 'focus:ring-2', 'focus:ring-blue-500', 'focus:outline-none', 'text-sm');
+    });
+</script>
 {% endblock %}

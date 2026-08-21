@@ -8,26 +8,55 @@
     <form method="POST" class="space-y-5">
         {% csrf_token %}
         
+        <!-- Errores generales del formulario (si aplican) -->
+        {% if form.non_field_errors %}
+        <div class="p-4 mb-4 text-sm text-red-700 bg-red-100 rounded-lg border border-red-200" role="alert">
+            <span class="font-bold">Atención:</span>
+            {% for error in form.non_field_errors %}
+                <p>{{ error }}</p>
+            {% endfor %}
+        </div>
+        {% endif %}
+        
         <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
             <div>
-                <label class="block font-semibold text-sm text-gray-700 mb-1.5">Código de Heramienta:</label>
+                <label class="block font-semibold text-sm text-gray-700 mb-1.5">Código de Herramienta:</label>
                 {{ form.codigo }}
+                {% if form.codigo.errors %}
+                    <p class="text-red-600 text-xs font-semibold mt-1">{{ form.codigo.errors.0 }}</p>
+                {% endif %}
             </div>
+
             <div>
                 <label class="block font-semibold text-sm text-gray-700 mb-1.5">Nombre:</label>
                 {{ form.nombre }}
+                {% if form.nombre.errors %}
+                    <p class="text-red-600 text-xs font-semibold mt-1">{{ form.nombre.errors.0 }}</p>
+                {% endif %}
             </div>
+
             <div>
                 <label class="block font-semibold text-sm text-gray-700 mb-1.5">Marca de Fabricante:</label>
                 {{ form.marca }}
+                {% if form.marca.errors %}
+                    <p class="text-red-600 text-xs font-semibold mt-1">{{ form.marca.errors.0 }}</p>
+                {% endif %}
             </div>
+
             <div>
                 <label class="block font-semibold text-sm text-gray-700 mb-1.5">Estado Operativo:</label>
                 {{ form.estado }}
+                {% if form.estado.errors %}
+                    <p class="text-red-600 text-xs font-semibold mt-1">{{ form.estado.errors.0 }}</p>
+                {% endif %}
             </div>
+
             <div class="md:col-span-2">
                 <label class="block font-semibold text-sm text-gray-700 mb-1.5">Ubicación Física (Taller):</label>
                 {{ form.ubicacion }}
+                {% if form.ubicacion.errors %}
+                    <p class="text-red-600 text-xs font-semibold mt-1">{{ form.ubicacion.errors.0 }}</p>
+                {% endif %}
             </div>
         </div>
         
@@ -41,4 +70,11 @@
         </div>
     </form>
 </div>
+
+<script>
+    // Inyección de estilos Tailwind a los inputs del formulario
+    document.querySelectorAll('input, select, textarea').forEach(el => {
+        el.classList.add('w-full', 'px-3', 'py-2', 'border', 'rounded-md', 'bg-white', 'focus:ring-2', 'focus:ring-blue-500', 'focus:outline-none', 'text-sm');
+    });
+</script>
 {% endblock %}

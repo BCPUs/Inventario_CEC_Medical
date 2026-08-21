@@ -49,7 +49,8 @@ class HerramientaForm(TailwindFormMixin, forms.ModelForm):
 class OrdenTrabajoForm(TailwindFormMixin, forms.ModelForm):
     class Meta:
         model = OrdenTrabajo
-        fields = ['secuencial', 'equipo', 'tecnico', 'diagnostico_falla']
+        # REQUERIMIENTO: Nro de Orden ya no se pide ni se modifica
+        fields = ['equipo', 'tecnico', 'diagnostico_falla']
         widgets = {'diagnostico_falla': forms.Textarea(attrs={'rows': 4, 'placeholder': 'Describa el estado en el que se recibe el equipo y la avería detectada...'})}
 
 class MovimientoOrdenForm(TailwindFormMixin, forms.ModelForm):
@@ -57,3 +58,17 @@ class MovimientoOrdenForm(TailwindFormMixin, forms.ModelForm):
         model = MovimientoInventario
         fields = ['repuesto', 'cantidad', 'observaciones']
         widgets = {'observaciones': forms.Textarea(attrs={'rows': 2, 'placeholder': 'Ej. Sustitución por desgaste estructural.'})}
+
+    # REQUERIMIENTO: Mensaje de error al solicitar más del stock existente
+    def clean(self):
+        cleaned_data = super().clean()
+        repuesto = cleaned_data.get('repuesto')
+        cantidad = cleaned_data.get('cantidad')
+
+        if repuesto and cantidad:
+            if cantidad > repuesto.stock:
+                self.add_error(
+                    'cantidad', 
+                    f"Stock insuficiente. No puedes agregar {cantidad} unidades. Solo hay {repuesto.stock} disponible(s) en bodega."
+                )
+        return cleaned_data

@@ -1,16 +1,16 @@
 {% extends 'base.html' %}
 
 {% block content %}
-<div class="max-w-2xl mx-auto bg-white p-8 rounded-lg shadow-md mt-10">
+<div class="max-w-2xl mx-auto bg-white p-8 rounded-lg shadow-md mt-10 border border-gray-100">
     <h2 class="text-2xl font-bold text-blue-800 mb-6 border-b pb-2">Registrar Movimiento de Inventario</h2>
 
-    <!-- Bloque para mostrar errores de stock insuficiente -->
-    {% if messages %}
-        {% for message in messages %}
-            <div class="mb-4 p-4 rounded {% if message.tags == 'error' %}bg-red-100 text-red-700{% else %}bg-green-100 text-green-700{% endif %}">
-                {{ message }}
-            </div>
-        {% endfor %}
+    <!-- Errores generales de lógica del formulario (Stock insuficiente, etc.) -->
+    {% if form.non_field_errors %}
+        <div class="p-4 mb-4 text-sm bg-red-100 text-red-800 border border-red-200 rounded-lg">
+            {% for error in form.non_field_errors %}
+                <p>{{ error }}</p>
+            {% endfor %}
+        </div>
     {% endif %}
 
     <form method="POST" class="space-y-4">
@@ -19,34 +19,61 @@
         <div>
             <label class="block text-gray-700 font-semibold mb-2">Repuesto:</label>
             {{ form.repuesto }}
+            {% if form.repuesto.errors %}
+                <p class="text-red-600 text-xs mt-1 font-semibold">{% for error in form.repuesto.errors %}{{ error }}{% endfor %}</p>
+            {% endif %}
         </div>
         
-        <div class="grid grid-cols-2 gap-4">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
                 <label class="block text-gray-700 font-semibold mb-2">Tipo de Movimiento:</label>
                 {{ form.tipo }}
+                {% if form.tipo.errors %}
+                    <p class="text-red-600 text-xs mt-1 font-semibold">{% for error in form.tipo.errors %}{{ error }}{% endfor %}</p>
+                {% endif %}
             </div>
             <div>
                 <label class="block text-gray-700 font-semibold mb-2">Cantidad:</label>
                 {{ form.cantidad }}
+                {% if form.cantidad.errors %}
+                    <p class="text-red-600 text-xs mt-1 font-bold">{% for error in form.cantidad.errors %}{{ error }}{% endfor %}</p>
+                {% endif %}
             </div>
         </div>
 
         <div>
-            <label class="block text-gray-700 font-semibold mb-2">Equipo en Mantenimiento (Opcional):</label>
-            {{ form.equipo_destino }}
-            <p class="text-xs text-gray-500 mt-1">Seleccione solo si es una salida (uso de material).</p>
+            <label class="block text-gray-700 font-semibold mb-2">Orden / Equipo en Mantenimiento (Opcional):</label>
+            {{ form.equipo_destino|default:form.orden_trabajo }}
+            <p class="text-xs text-gray-500 mt-1">Seleccione solo si es una salida (uso de material en mantenimiento).</p>
         </div>
 
         <div>
             <label class="block text-gray-700 font-semibold mb-2">Motivo / Observaciones:</label>
             {{ form.observaciones }}
+            {% if form.observaciones.errors %}
+                <p class="text-red-600 text-xs mt-1 font-semibold">{% for error in form.observaciones.errors %}{{ error }}{% endfor %}</p>
+            {% endif %}
         </div>
 
         <div class="mt-6 flex justify-end space-x-3">
-            <a href="{% url 'equipo_list' %}" class="bg-gray-400 hover:bg-gray-500 text-white font-bold py-2 px-4 rounded transition">Cancelar</a>
+            <a href="{% url 'movimiento_list' %}" class="bg-gray-400 hover:bg-gray-500 text-white font-bold py-2 px-4 rounded transition">Cancelar</a>
             <button type="submit" class="bg-blue-600 hover:bg-blue-800 text-white font-bold py-2 px-4 rounded transition">Registrar Movimiento</button>
         </div>
     </form>
 </div>
+
+<!-- Scripts de validación e inyección de Tailwind -->
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        const cantidadInput = document.getElementById("id_cantidad");
+        if(cantidadInput) {
+            cantidadInput.setAttribute("min", "1");
+        }
+
+        // Estilos para los campos del formulario
+        document.querySelectorAll('input, select, textarea').forEach(el => {
+            el.classList.add('w-full', 'px-3', 'py-2', 'border', 'rounded-md', 'bg-white', 'focus:ring-2', 'focus:ring-blue-500', 'focus:outline-none', 'text-sm');
+        });
+    });
+</script>
 {% endblock %}

@@ -1,162 +1,787 @@
 {% extends 'base.html' %}
 {% block content %}
 
-{% if messages %}
-    <div class="mb-6 space-y-2">
-        {% for message in messages %}
-            <div class="p-4 text-sm rounded-lg shadow-sm font-medium {% if message.tags == 'error' %}bg-red-100 text-red-800 border border-red-200{% else %}bg-green-100 text-green-800 border border-green-200{% endif %}">
-                {{ message }}
-            </div>
-        {% endfor %}
-    </div>
-{% endif %}
-
-<!-- Encabezado Principal -->
 <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 pb-4 border-b gap-4">
+
     <div>
         <div class="flex items-center space-x-3">
-            <h2 class="text-2xl font-bold text-gray-800">Orden de Trabajo: OT-{{ orden.secuencial }}</h2>
-            <span class="px-3 py-1 text-xs font-bold rounded-full 
-                {% if orden.estado == 'reparada' %}bg-green-100 text-green-800 border border-green-200
-                {% elif orden.estado == 'abierta' %}bg-yellow-100 text-yellow-800 border border-yellow-200
-                {% elif orden.estado == 'sin_reparacion' %}bg-red-100 text-red-800 border border-red-200
-                {% else %}bg-gray-100 text-gray-800 border border-gray-200{% endif %}">
+
+            <h2 class="text-2xl font-bold text-gray-800">
+                Orden de Trabajo: OT-{{ orden.secuencial }}
+            </h2>
+
+            <span class="px-3 py-1 text-xs font-bold rounded-full
+                {% if orden.estado == 'reparada' %}
+                    bg-green-100 text-green-800 border border-green-200
+                {% elif orden.estado == 'abierta' %}
+                    bg-yellow-100 text-yellow-800 border border-yellow-200
+                {% elif orden.estado == 'en_proceso' %}
+                    bg-blue-100 text-blue-800 border border-blue-200
+                {% elif orden.estado == 'sin_reparacion' %}
+                    bg-red-100 text-red-800 border border-red-200
+                {% else %}
+                    bg-gray-100 text-gray-800 border border-gray-200
+                {% endif %}">
+
                 {{ orden.get_estado_display }}
+
             </span>
+
         </div>
-        <p class="text-sm text-gray-500 mt-1">Registrada el {{ orden.fecha_ingreso|date:"d/m/Y H:i" }}</p>
+
+        <p class="text-sm text-gray-500 mt-1">
+            Registrada el {{ orden.fecha_ingreso|date:"d/m/Y H:i" }}
+        </p>
+
     </div>
-    
-    <div class="flex space-x-3 text-sm">
-        <a href="{% url 'orden_list' %}" class="bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold py-2 px-4 rounded transition-colors">
+
+
+    <div class="flex flex-wrap gap-3 text-sm">
+
+        <a href="{% url 'orden_list' %}"
+           class="bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold py-2 px-4 rounded transition-colors">
+
             ← Volver a Lista
+
         </a>
-        <a href="{% url 'orden_agregar_repuesto' pk=orden.pk %}" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded shadow transition-colors">
-            + Instalar Componente
-        </a>
+
+
+        {% if orden.estado == 'abierta' %}
+
+            <form method="POST"
+                  action="{% url 'orden_iniciar' pk=orden.pk %}">
+
+                {% csrf_token %}
+
+                <button type="submit"
+                        class="bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-2 px-4 rounded shadow transition-colors">
+
+                    Iniciar Reparación
+
+                </button>
+
+            </form>
+
+        {% endif %}
+
+
+        {% if orden.estado == 'abierta' or orden.estado == 'en_proceso' %}
+
+            <a href="{% url 'orden_agregar_repuesto' pk=orden.pk %}"
+               class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded shadow transition-colors">
+
+                + Instalar Componente
+
+            </a>
+
+
+            <form method="POST"
+                  action="{% url 'orden_cerrar' pk=orden.pk %}">
+
+                {% csrf_token %}
+
+                <input type="hidden"
+                       name="estado_cierre"
+                       value="reparada">
+
+                <button type="submit"
+                        class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded shadow transition-colors">
+
+                    Finalizar como Reparado
+
+                </button>
+
+            </form>
+
+
+            <form method="POST"
+                  action="{% url 'orden_cerrar' pk=orden.pk %}">
+
+                {% csrf_token %}
+
+                <input type="hidden"
+                       name="estado_cierre"
+                       value="sin_reparacion">
+
+                <button type="submit"
+                        class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded shadow transition-colors">
+
+                    Finalizar sin Reparación
+
+                </button>
+
+            </form>
+
+        {% endif %}
+
     </div>
+
 </div>
+
+
+<!-- ========================================================= -->
+<!-- INFORMACIÓN GENERAL -->
+<!-- ========================================================= -->
 
 <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-    
-    <!-- Información General de la OT -->
+
+
+    <!-- INFORMACIÓN DE LA ORDEN -->
+
     <div class="lg:col-span-2 bg-white border border-gray-100 rounded-lg shadow-sm p-5 space-y-4">
-        <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider border-b pb-2">Información de la Recepción y Mantenimiento</h3>
-        
+
+        <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider border-b pb-2">
+
+            Información de la Recepción y Mantenimiento
+
+        </h3>
+
+
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+
             <div>
-                <span class="block text-gray-500 font-medium text-xs">Técnico Responsable</span>
-                <span class="font-semibold text-gray-800">{{ orden.tecnico|default:"Sin Asignar" }}</span>
-            </div>
-            <div>
-                <span class="block text-gray-500 font-medium text-xs">Fecha de Finalización</span>
-                <span class="font-semibold text-gray-800">
-                    {% if orden.fecha_finalizacion %}
-                        {{ orden.fecha_finalizacion|date:"d/m/Y H:i" }}
-                    {% else %}
-                        <span class="text-amber-600 font-normal">En Proceso / Pendiente</span>
-                    {% endif %}
+
+                <span class="block text-gray-500 font-medium text-xs">
+                    Técnico Responsable
                 </span>
+
+                <span class="font-semibold text-gray-800">
+                    {{ orden.tecnico|default:"Sin Asignar" }}
+                </span>
+
             </div>
+
+
+            <div>
+
+                <span class="block text-gray-500 font-medium text-xs">
+                    Fecha de Finalización
+                </span>
+
+                <span class="font-semibold text-gray-800">
+
+                    {% if orden.fecha_finalizacion %}
+
+                        {{ orden.fecha_finalizacion|date:"d/m/Y H:i" }}
+
+                    {% elif orden.estado == 'abierta' %}
+
+                        <span class="text-yellow-600 font-normal">
+                            Pendiente de iniciar
+                        </span>
+
+                    {% elif orden.estado == 'en_proceso' %}
+
+                        <span class="text-blue-600 font-normal">
+                            En proceso de reparación
+                        </span>
+
+                    {% endif %}
+
+                </span>
+
+            </div>
+
         </div>
+
 
         <div class="pt-2">
-            <span class="block text-gray-500 font-medium text-xs mb-1">Diagnóstico Inicial / Falla Reportada</span>
+
+            <span class="block text-gray-500 font-medium text-xs mb-1">
+
+                Diagnóstico Inicial / Falla Reportada
+
+            </span>
+
             <div class="bg-gray-50 p-3 rounded-md text-gray-700 text-sm border border-gray-200">
-                {{ orden.diagnostico_falla|linebreaks|default:"Sin diagnóstico registrado." }}
+
+                {{ orden.diagnostico_falla|linebreaks }}
+
             </div>
+
         </div>
+
     </div>
 
-    <!-- Ficha Técnica del Equipo Médico -->
+
+    <!-- ========================================================= -->
+    <!-- EQUIPO -->
+    <!-- ========================================================= -->
+
     <div class="bg-white border border-gray-100 rounded-lg shadow-sm p-5 space-y-3">
-        <h3 class="text-xs font-bold text-blue-800 uppercase tracking-wider border-b pb-2">Equipo Médico Asociado</h3>
-        
+
+        <h3 class="text-xs font-bold text-blue-800 uppercase tracking-wider border-b pb-2">
+
+            Equipo Médico Asociado
+
+        </h3>
+
+
         <div>
-            <span class="block text-gray-400 text-xs font-bold">NOMBRE EQUIPO</span>
-            <p class="font-bold text-gray-800 text-base">{{ orden.equipo.nombre }}</p>
+
+            <span class="block text-gray-400 text-xs font-bold">
+                NOMBRE EQUIPO
+            </span>
+
+            <p class="font-bold text-gray-800 text-base">
+                {{ orden.equipo.nombre }}
+            </p>
+
         </div>
-        
+
+
         <div class="grid grid-cols-2 gap-2 text-xs">
+
             <div>
-                <span class="block text-gray-400 font-bold">CÓDIGO INVENTARIO</span>
-                <span class="font-mono text-gray-700 font-semibold">{{ orden.equipo.codigo }}</span>
+
+                <span class="block text-gray-400 font-bold">
+                    CÓDIGO INVENTARIO
+                </span>
+
+                <span class="font-mono text-gray-700 font-semibold">
+                    {{ orden.equipo.codigo }}
+                </span>
+
             </div>
+
+
             <div>
-                <span class="block text-gray-400 font-bold">MARCA</span>
-                <span class="text-gray-700 font-semibold">{{ orden.equipo.marca.nombre }}</span>
+
+                <span class="block text-gray-400 font-bold">
+                    MARCA
+                </span>
+
+                <span class="text-gray-700 font-semibold">
+                    {{ orden.equipo.marca.nombre }}
+                </span>
+
             </div>
+
+
             <div>
-                <span class="block text-gray-400 font-bold">MODELO</span>
-                <span class="text-gray-700 font-semibold">{{ orden.equipo.modelo|default:"-" }}</span>
+
+                <span class="block text-gray-400 font-bold">
+                    MODELO
+                </span>
+
+                <span class="text-gray-700 font-semibold">
+                    {{ orden.equipo.modelo|default:"-" }}
+                </span>
+
             </div>
+
+
             <div>
-                <span class="block text-gray-400 font-bold">N° SERIE</span>
-                <span class="font-mono text-gray-700 font-semibold">{{ orden.equipo.serie }}</span>
+
+                <span class="block text-gray-400 font-bold">
+                    N° SERIE
+                </span>
+
+                <span class="font-mono text-gray-700 font-semibold">
+                    {{ orden.equipo.serie }}
+                </span>
+
             </div>
+
+
             <div class="col-span-2 pt-1 border-t">
-                <span class="block text-gray-400 font-bold">ESTADO OPERATIVO</span>
-                <span class="text-xs font-semibold text-gray-800">{{ orden.equipo.get_estado_display }}</span>
+
+                <span class="block text-gray-400 font-bold">
+                    ESTADO OPERATIVO
+                </span>
+
+                <span class="text-xs font-semibold text-gray-800">
+                    {{ orden.equipo.get_estado_display }}
+                </span>
+
             </div>
+
         </div>
+
     </div>
+
 </div>
 
-<!-- Componentes / Repuestos Utilizados (Vía MovimientoInventario) -->
+
+<!-- ========================================================= -->
+<!-- REPUESTOS -->
+<!-- ========================================================= -->
+
 <div class="bg-white rounded-lg shadow border border-gray-100">
+
     <div class="p-4 border-b flex justify-between items-center bg-gray-50">
+
         <h3 class="font-bold text-gray-700 text-sm uppercase tracking-wider">
+
             Repuestos e Insumos Asignados a esta Orden
+
         </h3>
-        <a href="{% url 'orden_agregar_repuesto' pk=orden.pk %}" class="text-blue-600 hover:text-blue-800 font-bold text-xs">
-            + Registrar uso de repuesto
-        </a>
+
     </div>
+
 
     <div class="overflow-x-auto">
-        <table class="min-w-full text-left text-sm whitespace-nowrap">
+
+        <table class="min-w-full text-left text-sm">
+
             <thead class="bg-gray-50 text-gray-400 uppercase text-xs text-center border-b font-bold tracking-wider">
+
                 <tr>
-                    <th class="px-6 py-3">Código</th>
-                    <th class="px-6 py-3 text-left">Repuesto / Insumo</th>
-                    <th class="px-6 py-3">Cantidad</th>
-                    <th class="px-6 py-3">Precio Unit.</th>
-                    <th class="px-6 py-3 text-left">Registrado Por</th>
-                    <th class="px-6 py-3 text-left">Observaciones</th>
+
+                    <th class="px-4 py-3">
+                        Código
+                    </th>
+
+                    <th class="px-4 py-3 text-left">
+                        Repuesto / Insumo
+                    </th>
+
+                    <th class="px-4 py-3">
+                        Cantidad
+                    </th>
+
+                    <th class="px-4 py-3">
+                        Precio Unit.
+                    </th>
+
+                    <th class="px-4 py-3">
+                        Tipo
+                    </th>
+
+                    <th class="px-4 py-3">
+                        Registrado Por
+                    </th>
+
+                    <th class="px-4 py-3">
+                        Acción
+                    </th>
+
                 </tr>
+
             </thead>
+
+
             <tbody class="divide-y divide-gray-100 text-center">
+
+
                 {% for movimiento in orden.insumos.all %}
-                <tr class="hover:bg-gray-50 transition-colors">
-                    <td class="px-6 py-4 font-mono font-bold text-gray-600 text-xs bg-gray-50/50">
-                        {{ movimiento.repuesto.codigo }}
-                    </td>
-                    <td class="px-6 py-4 text-left font-semibold text-gray-800">
-                        {{ movimiento.repuesto.nombre }}
-                    </td>
-                    <td class="px-6 py-4 font-bold text-gray-700">
-                        {{ movimiento.cantidad }}
-                    </td>
-                    <td class="px-6 py-4 text-gray-600">
-                        ${{ movimiento.repuesto.precio }}
-                    </td>
-                    <td class="px-6 py-4 text-left text-xs text-gray-600">
-                        {{ movimiento.tecnico.get_full_name|default:movimiento.tecnico.username|default:"-" }}
-                    </td>
-                    <td class="px-6 py-4 text-left text-xs text-gray-500 max-w-xs truncate">
-                        {{ movimiento.observaciones|default:"-" }}
-                    </td>
-                </tr>
+
+                    <tr class="hover:bg-gray-50">
+
+
+                        <!-- CÓDIGO -->
+
+                        <td class="px-4 py-4 font-mono font-bold text-gray-600 text-xs">
+
+                            {{ movimiento.repuesto.codigo }}
+
+                        </td>
+
+
+                        <!-- REPUESTO -->
+
+                        <td class="px-4 py-4 text-left font-semibold text-gray-800">
+
+                            {{ movimiento.repuesto.nombre }}
+
+                        </td>
+
+
+                        <!-- CANTIDAD -->
+
+                        <td class="px-4 py-4 font-bold text-gray-700">
+
+                            {{ movimiento.cantidad }}
+
+                        </td>
+
+
+                        <!-- PRECIO -->
+
+                        <td class="px-4 py-4 text-gray-600">
+
+                            ${{ movimiento.repuesto.precio }}
+
+                        </td>
+
+
+                        <!-- TIPO -->
+
+                        <td class="px-4 py-4">
+
+
+                            {% if movimiento.tipo == 'egreso' %}
+
+                                <span class="px-2 py-1 rounded-full bg-red-100 text-red-700 text-xs font-bold">
+
+                                    Egreso
+
+                                </span>
+
+
+                            {% elif movimiento.tipo == 'devolucion' %}
+
+                                <span class="px-2 py-1 rounded-full bg-green-100 text-green-700 text-xs font-bold">
+
+                                    Devolución
+
+                                </span>
+
+
+                            {% elif movimiento.tipo == 'compra' %}
+
+                                <span class="px-2 py-1 rounded-full bg-blue-100 text-blue-700 text-xs font-bold">
+
+                                    Ingreso
+
+                                </span>
+
+
+                            {% else %}
+
+                                <span class="px-2 py-1 rounded-full bg-gray-100 text-gray-700 text-xs font-bold">
+
+                                    {{ movimiento.tipo }}
+
+                                </span>
+
+                            {% endif %}
+
+
+                        </td>
+
+
+                        <!-- REGISTRADO POR -->
+
+                        <td class="px-4 py-4 text-xs text-gray-600">
+
+
+                            {% if movimiento.tecnico %}
+
+                                {% if movimiento.tecnico.get_full_name %}
+
+                                    {{ movimiento.tecnico.get_full_name }}
+
+                                {% else %}
+
+                                    {{ movimiento.tecnico.username }}
+
+                                {% endif %}
+
+                            {% else %}
+
+                                -
+
+                            {% endif %}
+
+
+                        </td>
+
+
+                        <!-- ACCIÓN -->
+
+                        <td class="px-4 py-4">
+
+
+                            {% if movimiento.tipo == 'egreso' %}
+
+
+                                <!-- YA DEVUELTO -->
+
+                                {% if movimiento.observaciones and '[REVERTIDO / DEVUELTO]' in movimiento.observaciones %}
+
+                                    <span class="text-green-600 text-xs font-bold">
+
+                                        Devuelto
+
+                                    </span>
+
+
+                                <!-- SE PUEDE DEVOLVER -->
+
+                                {% elif orden.estado == 'abierta' or orden.estado == 'en_proceso' %}
+
+
+                                    <button type="button"
+
+                                            onclick="abrirModalDevolucion(
+                                                '{{ movimiento.id }}',
+                                                '{{ movimiento.repuesto.nombre|escapejs }}',
+                                                '{{ movimiento.cantidad }}'
+                                            )"
+
+                                            class="bg-orange-500 hover:bg-orange-600 text-white font-bold py-1.5 px-3 rounded text-xs">
+
+                                        Devolver
+
+                                    </button>
+
+
+                                <!-- ORDEN FINALIZADA -->
+
+                                {% else %}
+
+                                    <span class="text-gray-400 text-xs">
+
+                                        —
+
+                                    </span>
+
+                                {% endif %}
+
+
+                            <!-- MOVIMIENTO DE DEVOLUCIÓN -->
+
+                            {% elif movimiento.tipo == 'devolucion' %}
+
+                                <span class="text-green-600 text-xs font-bold">
+
+                                    Devolución registrada
+
+                                </span>
+
+
+                            {% else %}
+
+                                <span class="text-gray-400 text-xs">
+
+                                    —
+
+                                </span>
+
+                            {% endif %}
+
+
+                        </td>
+
+                    </tr>
+
+
                 {% empty %}
-                <tr>
-                    <td colspan="6" class="px-6 py-8 text-center text-gray-400 font-medium">
-                        No se han registrado salidas de repuestos para esta Orden de Trabajo.
-                    </td>
-                </tr>
+
+                    <tr>
+
+                        <td colspan="7"
+                            class="px-6 py-8 text-center text-gray-400 font-medium">
+
+                            No se han registrado movimientos para esta Orden de Trabajo.
+
+                        </td>
+
+                    </tr>
+
                 {% endfor %}
+
+
             </tbody>
+
         </table>
+
     </div>
+
 </div>
+
+
+
+<!-- ========================================================= -->
+<!-- MODAL DE CONFIRMACIÓN DE DEVOLUCIÓN -->
+<!-- ========================================================= -->
+
+<div id="modalDevolucion"
+     class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+
+
+    <div class="bg-white rounded-lg shadow-xl w-full max-w-md mx-4">
+
+
+        <!-- CABECERA -->
+
+        <div class="p-6">
+
+
+            <div class="flex items-center justify-center mb-4">
+
+                <div class="w-12 h-12 rounded-full bg-orange-100 flex items-center justify-center">
+
+                    <span class="text-orange-600 text-2xl font-bold">
+
+                        !
+
+                    </span>
+
+                </div>
+
+            </div>
+
+
+            <h3 class="text-xl font-bold text-gray-800 text-center mb-3">
+
+                Confirmar devolución
+
+            </h3>
+
+
+            <p class="text-gray-600 text-center text-sm mb-2">
+
+                ¿Desea devolver este repuesto al inventario?
+
+            </p>
+
+
+            <!-- INFORMACIÓN DEL REPUESTO -->
+
+            <div class="bg-gray-50 border border-gray-200 rounded-lg p-4 mb-6 text-center">
+
+
+                <p class="font-bold text-gray-800"
+                   id="nombreRepuestoModal">
+
+                </p>
+
+
+                <p class="text-sm text-gray-500 mt-1">
+
+                    Cantidad:
+
+                    <span id="cantidadRepuestoModal"
+                          class="font-bold text-gray-700">
+
+                    </span>
+
+                </p>
+
+
+            </div>
+
+
+            <!-- BOTONES -->
+
+            <div class="flex justify-end gap-3">
+
+
+                <button type="button"
+                        onclick="cerrarModalDevolucion()"
+                        class="bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold py-2 px-5 rounded">
+
+                    Cancelar
+
+                </button>
+
+
+                <form id="formDevolucion"
+                      method="POST">
+
+                    {% csrf_token %}
+
+                    <button type="submit"
+                            class="bg-orange-500 hover:bg-orange-600 text-white font-bold py-2 px-5 rounded">
+
+                        Sí, devolver
+
+                    </button>
+
+                </form>
+
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+
+<!-- ========================================================= -->
+<!-- JAVASCRIPT -->
+<!-- ========================================================= -->
+
+<script>
+
+
+function abrirModalDevolucion(id, nombre, cantidad) {
+
+
+    const modal =
+        document.getElementById('modalDevolucion');
+
+
+    const nombreRepuesto =
+        document.getElementById('nombreRepuestoModal');
+
+
+    const cantidadRepuesto =
+        document.getElementById('cantidadRepuestoModal');
+
+
+    const formulario =
+        document.getElementById('formDevolucion');
+
+
+    nombreRepuesto.textContent =
+        nombre;
+
+
+    cantidadRepuesto.textContent =
+        cantidad;
+
+
+    /*
+        Django genera aquí una URL válida usando el ID 0
+        y JavaScript reemplaza únicamente ese ID.
+    */
+
+    formulario.action =
+        "{% url 'orden_devolver_repuesto' mov_id=0 %}"
+        .replace(
+            '/0/',
+            '/' + id + '/'
+        );
+
+
+    modal.classList.remove('hidden');
+
+}
+
+
+
+function cerrarModalDevolucion() {
+
+
+    const modal =
+        document.getElementById('modalDevolucion');
+
+
+    modal.classList.add('hidden');
+
+}
+
+
+
+document
+    .getElementById('modalDevolucion')
+    .addEventListener(
+        'click',
+        function(event) {
+
+
+            /*
+                Si se hace clic fuera del cuadro,
+                también se cierra el modal.
+            */
+
+            if (event.target === this) {
+
+                cerrarModalDevolucion();
+
+            }
+
+        }
+    );
+
+
+</script>
+
 
 {% endblock %}

@@ -4,19 +4,7 @@
     <h2 class="text-2xl font-bold text-blue-800 mb-6 border-b pb-3">
         {{ title|default:"Registrar Nuevo Repuesto" }}
     </h2>
-    
-    {% if form.non_field_errors %}
-    <div class="bg-red-50 border-l-4 border-red-500 p-4 mb-5 rounded shadow-sm">
-        <div class="flex">
-            <div class="ml-3 text-sm text-red-700 font-medium">
-                {% for error in form.non_field_errors %}
-                    <p>{{ error }}</p>
-                {% endfor %}
-            </div>
-        </div>
-    </div>
-    {% endif %}
-    
+        
     <form method="POST" class="space-y-5">
         {% csrf_token %}
         

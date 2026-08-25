@@ -27,6 +27,7 @@ DEBUG = True
 
 ALLOWED_HOSTS = []
 
+DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # Application definition
 
@@ -122,3 +123,4 @@ STATIC_URL = 'static/'
 
 LOGIN_REDIRECT_URL = 'equipo_list'
 LOGIN_URL = 'login'
+
